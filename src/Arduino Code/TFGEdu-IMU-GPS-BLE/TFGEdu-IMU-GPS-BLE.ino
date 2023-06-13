@@ -10,7 +10,9 @@ Madgwick orientation;
 
 const float gyracc_rate = 119.00; //Frecuencia de muestreo máxima del acelerómetro y giroscopio. (ref: https://reference.arduino.cc/reference/en/libraries/arduino_lsm9ds1/) 
 static void smartdelay(unsigned long ms); //Método que aplica un delay sin dejar de leer el puerto serial para no perder el hilo de ejecución.
-unsigned long startTime;
+unsigned long startTime = 0;
+bool first_connection = true;
+
 
 //Se declaran los servicios IMUService y GPSService.
 BLEService IMUService("40cae4b2-096e-11ee-be56-0242ac120002");
@@ -72,7 +74,8 @@ void setup() {
 
   orientation.begin(gyracc_rate); //Se inicia el filtro de madgwick para el cálculo de la orientación.
 
-  startTime = millis(); //Guardamos el tiempo en el que el programa ha arrancado.
+  first_connection = true;
+
 }
 
 void loop() {
@@ -90,6 +93,11 @@ void loop() {
 
   if (central) {
     // Si se conecta un central a este periférico:
+    //Se ejecuta este bloque 1 sola vez para empezar a contar a partir de entonces cuando el central se conecta.
+    if (first_connection){
+      startTime = millis();
+      first_connection = false;
+    }
     while (central.connected()) {
       //Mientras que el central esté escuchando la transmisión:
       
