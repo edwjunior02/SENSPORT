@@ -10,14 +10,12 @@ Madgwick orientation;
 
 const float gyracc_rate = 119.00; //Frecuencia de muestreo máxima del acelerómetro y giroscopio. (ref: https://reference.arduino.cc/reference/en/libraries/arduino_lsm9ds1/) 
 static void smartdelay(unsigned long ms); //Método que aplica un delay sin dejar de leer el puerto serial para no perder el hilo de ejecución.
-unsigned long startTime = 0;
-bool first_connection = true;
-
+//unsigned long startTime = 0;
+//bool first_connection = true;
 
 //Se declaran los servicios IMUService y GPSService.
 BLEService IMUService("40cae4b2-096e-11ee-be56-0242ac120002");
 BLEService GPSService("99a9cd32-09be-11ee-be56-0242ac120002");
-BLEService TIMEService("045b36f4-096d-11ee-be56-0242ac120002");
 
 //Se definen las características del servicio IMUService.
 BLECharacteristic AccelerometerData("9f0190d0-09be-11ee-be56-0242ac120002", BLERead | BLENotify, 20);
@@ -27,9 +25,6 @@ BLECharacteristic OrientationData("57c1b046-09bf-11ee-be56-0242ac120002", BLERea
 
 //Se define la característica para el servicio GPSService.
 BLECharacteristic GPSData("6044bf74-09bf-11ee-be56-0242ac120002", BLERead | BLENotify, 100);
-
-//Se define la característica para el servicio TIMEService.
-BLECharacteristic TIMEData("ecd720e4-09bf-11ee-be56-0242ac120002", BLERead | BLENotify, 100);
 
 void setup() {
 
@@ -63,18 +58,12 @@ void setup() {
   //Se agregan las diferentes características al servicio GPSService y se añade el servicio a la pila BLE.
   GPSService.addCharacteristic(GPSData);
   BLE.addService(GPSService);
-
-  //Se agregan las diferentes características al servicio TIMEService y se añade el servicio a la pila BLE.
-  TIMEService.addCharacteristic(TIMEData);
-  BLE.addService(TIMEService);
   
-  BLE.setConnectionInterval(0.0075, 4); //Establecemos un intérvalo de conexión: el mínimo es de 7.5ms y el máximo es de 4s (ref: https://punchthrough.com/maximizing-ble-throughput-on-ios-and-android/) 
+  BLE.setConnectionInterval(1, 4); //Establecemos un intérvalo de conexión: el mínimo es de 7.5ms y el máximo es de 4s (ref: https://punchthrough.com/maximizing-ble-throughput-on-ios-and-android/) 
   BLE.setConnectable(true); //Se habilita el periférico para que otros dispositivos puedan conectarse
   BLE.advertise(); //Se inicia la difusion de los servicios.
 
   orientation.begin(gyracc_rate); //Se inicia el filtro de madgwick para el cálculo de la orientación.
-
-  first_connection = true;
 
 }
 
@@ -93,11 +82,13 @@ void loop() {
 
   if (central) {
     // Si se conecta un central a este periférico:
+
     //Se ejecuta este bloque 1 sola vez para empezar a contar a partir de entonces cuando el central se conecta.
-    if (first_connection){
-      startTime = millis();
-      first_connection = false;
-    }
+    //if (first_connection){
+    //   startTime = millis();
+    //  first_connection = false;
+    //}
+
     while (central.connected()) {
       //Mientras que el central esté escuchando la transmisión:
       
@@ -105,9 +96,7 @@ void loop() {
           //Si los datos del sensor IMU están disponibles:
 
           //Se declara la variable que almacenará el tiempo.
-          float timestamp = (millis() - startTime) / 1000.0;
-          String time = String(timestamp); //Parsing a string para enviar por BL.
-          TIMEData.writeValue(time.c_str()); //Se escribe el valor de la marca de tiempo en la característica correspondiente al timestamp.
+          //float timestamp = (millis() - startTime) / 1000.0;
               
           IMU.readAcceleration(xAcc, yAcc, zAcc); //Lectura de los datos del acelerómetro y asignación a las variables [xAcc, yAcc, zAcc] respectivamente.
           String accString = String(xAcc)+","+String(yAcc)+","+String(zAcc); //Se parsean los datos a strings para poder enviar por BLE sin problemas de conversión.
@@ -145,6 +134,7 @@ void loop() {
           else {
             Serial.println("Todavía no se ha conectado a ningún satélite.");  
           }
+
           smartdelay(10); //Se deja un delay de 10ms para actualizar el buffer de nuevos valores. 
       }     
     }
