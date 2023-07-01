@@ -1,4 +1,5 @@
 //IMPORTAMOS LAS LIBRERIAS NECESARIAS:
+
 #include "MadgwickAHRS.h" //Librería necesaria para realizar el cálculo de quaterniones para determinar la orientación de la pala.
 #include "TinyGPS.h" //Librería necesaria para realizar el manejo de las trazas NMEA y conseguir el cálculo de latitud y longitud, entre otros.
 #include <ArduinoBLE.h> //Librería necesaria para construir la infraestructura bluetooth con todos los servicios y características necesarias.
@@ -10,8 +11,6 @@ Madgwick orientation;
 
 const float gyracc_rate = 119.00; //Frecuencia de muestreo máxima del acelerómetro y giroscopio. (ref: https://reference.arduino.cc/reference/en/libraries/arduino_lsm9ds1/) 
 static void smartdelay(unsigned long ms); //Método que aplica un delay sin dejar de leer el puerto serial para no perder el hilo de ejecución.
-//unsigned long startTime = 0;
-//bool first_connection = true;
 
 //Se declaran los servicios IMUService y GPSService.
 BLEService IMUService("40cae4b2-096e-11ee-be56-0242ac120002");
@@ -38,7 +37,7 @@ void setup() {
 
   if(!IMU.begin()) {
     //Si el módulo IMU no ha iniciado correctamente, se ejecuta este comando:
-    while(true);
+    while(true); //Espera infinitamente
   }
 
   //Nombre por el que se identificará al dispositivo.
@@ -83,20 +82,11 @@ void loop() {
   if (central) {
     // Si se conecta un central a este periférico:
 
-    //Se ejecuta este bloque 1 sola vez para empezar a contar a partir de entonces cuando el central se conecta.
-    //if (first_connection){
-    //   startTime = millis();
-    //  first_connection = false;
-    //}
-
     while (central.connected()) {
       //Mientras que el central esté escuchando la transmisión:
       
       if (IMU.accelerationAvailable() && IMU.gyroscopeAvailable() && IMU.magneticFieldAvailable()) {
           //Si los datos del sensor IMU están disponibles:
-
-          //Se declara la variable que almacenará el tiempo.
-          //float timestamp = (millis() - startTime) / 1000.0;
               
           IMU.readAcceleration(xAcc, yAcc, zAcc); //Lectura de los datos del acelerómetro y asignación a las variables [xAcc, yAcc, zAcc] respectivamente.
           String accString = String(xAcc)+","+String(yAcc)+","+String(zAcc); //Se parsean los datos a strings para poder enviar por BLE sin problemas de conversión.
